@@ -3,75 +3,63 @@ import {useEffect, useState} from "react";
 import {ImageBackground, SafeAreaView} from "react-native-web";
 
 export default function App() {
-  const [photos, setPhotos] = useState(null);
+    const [photos, setPhotos] = useState(null);
 
-//   A SINGLE PHOTO IS {
-//         "albumId": 1,
-//         "id": 2,
-//         "title": "reprehenderit est deserunt velit ipsam",
-//         "url": "https://via.placeholder.com/600/771796",
-//         "thumbnailUrl": "https://via.placeholder.com/150/771796"
-// }
+    useEffect(() => {
+        caches.has('photos').then((result)=> {
+            if (result) {
+                caches.open('photos').then((cache) => {
+                    cache.match("https://localhost:19006")
+                        .then(response => response.json())
+                        .then((data) => {
+                            console.log(data);
+                            setPhotos(data);
+                        })
+                })
+            } else {
+                caches.open('photos').then((cache) => {
+                    fetch('https://jsonplaceholder.typicode.com/photos')
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log("put into cache");
+                            cache.put("https://localhost:19006", new Response(JSON.stringify(data)));
+                            setPhotos(data);
+                        });
+                })
+            }
+        })}, []);
 
-  const renderItem = ({item}) => (
-    <View key={item.key}
-          style={styles.itemView}>
+    function randomize() {
+        console.log('im bad at coding');
+        // if (photos) {
+        //     setPhotos(recursiveRandomization(array));
+        // }
+    }
+
+    // const recursiveRandomization = (array) => {
+    //     console.log(array);
+    //     let rng = Math.floor(Math.random() * array.length)
+    //     return array[rng] + (recursiveRandomization(array.slice(rng,1)));
+    // }
+
+    const renderItem = ({item}) => (
+        <View key={item.key} style={styles.itemView}>
             <ImageBackground source={item.url} style={styles.itemPhoto}>
                 <View style={styles.itemText}>
                     <Text>{item.title}</Text>
                 </View>
             </ImageBackground>
-    </View>
-  );
+        </View>
+    );
 
-  const useFetch = (url) => {
-    const [status, setStatus] = useState('idle');
-    const [data, setData] = useState([]);
-
-    useEffect(() => {
-        if (!url) return;
-        const fetchData = async () => {
-            setStatus('fetching');
-            const response = await fetch(url);
-            const data = await response.json();
-            setData(data);
-            console.log("i fetched images")
-            setStatus('fetched');
-        };
-
-        fetchData();
-    }, [url]);
-
-    return { status, data };
-  };
-
-
-  const url = `https://jsonplaceholder.typicode.com/photos`;
-  const { status, data } = useFetch(url);
-
-
-  //   useEffect(() => {
-  //     fetch('https://jsonplaceholder.typicode.com/photos')
-  //         .then(response => response.json()).then(json => {
-  //             setPhotos(json);
-  //         });
-  // });
-
-
-  return (
-      <SafeAreaView>
-          <View style={styles.titleView}>
-              <Text style={styles.titleText}>
-                  My Convergence Tech Assessment</Text>
-          </View>
-          <FlatList
-              horizontal={true}
-              data={data}
-              renderItem={renderItem}
-              keyExtractor={item => item.id}
-          />
+    return (
+        <SafeAreaView>
+            <View style={styles.titleView}>
+                <Text style={styles.titleText}>My Convergence Tech Assessment</Text>
+            </View>
+            <FlatList horizontal={true} data={photos} renderItem={renderItem} keyExtractor={item => item.id}/>
           <View style={styles.container}>
-              <Button style={styles.randomizeButton} title="Randomize"/>
+              <Button style={styles.randomizeButton} title="Randomize" onPress={randomize}/>
           </View>
       </SafeAreaView>
   );
