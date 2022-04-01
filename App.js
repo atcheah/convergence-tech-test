@@ -1,49 +1,80 @@
-import {AsyncStorage, Button, FlatList, SectionList, StyleSheet, Text, View} from 'react-native';
+import {Button, FlatList, StyleSheet, Text, View} from 'react-native';
 import {useEffect, useState} from "react";
 import {ImageBackground, SafeAreaView} from "react-native-web";
 
 export default function App() {
+    //  Photos is one of: null or array of JSON objects
     const [photos, setPhotos] = useState(null);
+    // cacheName represents the name of the cache created to hold the response data
+    const cacheName = 'photos';
+    // url represents the destination of fetch request
+    const url = 'https://jsonplaceholder.typicode.com/photos';
+    // endpoint represents the url of web page
+    const endpoint = 'https://localhost:19006';
 
+
+    //  useEffect()
+    //      params: none
+    //      returns; none
+    //      effects: photos
+    //  useEffect checks for existing cache with cacheName, then whether cache exists:
+    //   - opens cache and reads data into photos or,
+    //   - fetches from url, sets the response to photos and caches the response
     useEffect(() => {
-        caches.has('photos').then((result)=> {
+        caches.has(cacheName).then((result)=> {
             if (result) {
-                caches.open('photos').then((cache) => {
-                    cache.match("https://localhost:19006")
+                caches.open(cacheName).then((cache) => {
+                    cache.match(endpoint)
                         .then(response => response.json())
                         .then((data) => {
-                            console.log(data);
                             setPhotos(data);
                         })
                 })
             } else {
-                caches.open('photos').then((cache) => {
-                    fetch('https://jsonplaceholder.typicode.com/photos')
+                caches.open(cacheName).then((cache) => {
+                    fetch(url)
                         .then(response => response.json())
                         .then(data => {
-                            console.log("put into cache");
-                            cache.put("https://localhost:19006", new Response(JSON.stringify(data)));
+                            cache.put(endpoint, new Response(JSON.stringify(data)));
                             setPhotos(data);
                         });
                 })
             }
         })}, []);
 
+    //  randomize()
+    //      params: none
+    //      returns: none
+    //      effects: photos
+    // randomize checks if photo's has been retrieved yet, and if it has, calls recursive shuffle upon photos
     function randomize() {
-        console.log('im bad at coding');
-        // if (photos) {
-        //     setPhotos(recursiveRandomization(array));
-        // }
+        if (photos) {
+            setPhotos(recursiveShuffle(photos));
+        }
     }
 
-    // const recursiveRandomization = (array) => {
-    //     console.log(array);
-    //     let rng = Math.floor(Math.random() * array.length)
-    //     return array[rng] + (recursiveRandomization(array.slice(rng,1)));
-    // }
+    //  recursiveShuffle(array)
+    //      params: Array []
+    //      returns: Array []
+    //      effects: none
+    //  recursiveShuffle selects one random element to put to the front of the input array and calls itself
+    //  again on the array with that element removed
+    const recursiveShuffle = (array) => {
+        if (array.length > 1) {
+            let rng = Math.floor(Math.random() * array.length);
+            return [array[rng]].concat(recursiveShuffle(array.slice(0,rng).concat(array.slice(rng+1,array.length))));
+        } else {
+            return array;
+        }
+    }
 
+    //  renderItem({item})
+    //      params: JSON object
+    //      returns: JSX object
+    //      effects: none
+    //  renders the item or photo with associated style guidelines
     const renderItem = ({item}) => (
-        <View key={item.key} style={styles.itemView}>
+        <View key={item.key}>
             <ImageBackground source={item.url} style={styles.itemPhoto}>
                 <View style={styles.itemText}>
                     <Text>{item.title}</Text>
